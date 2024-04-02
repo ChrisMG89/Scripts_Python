@@ -31,6 +31,7 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 import customtkinter
+import csv
 
 customtkinter.set_appearance_mode("#ffffff")
 customtkinter.set_default_color_theme("green")
@@ -43,33 +44,63 @@ def get_decimal_coords(tag):
     return decimal_degrees
 
 def obtener_coordenadas_gps(imagen_path):
-    with open(imagen_path, 'rb') as f:
-        tags = exifread.process_file(f, stop_tag="GPS GPSLongitudeRef")
-        if 'GPS GPSLatitude' in tags and 'GPS GPSLongitude' in tags:
-            latitud = get_decimal_coords(tags['GPS GPSLatitude'])
-            longitud = get_decimal_coords(tags['GPS GPSLongitude'])
-            lat_ref = str(tags['GPS GPSLatitudeRef'])
-            long_ref = str(tags['GPS GPSLongitudeRef'])
-            if lat_ref == 'S':
-                latitud = -latitud
-            if long_ref == 'W':
-                longitud = -longitud
-            return latitud, longitud
+    try:
+        with open(imagen_path, 'rb') as f:
+            # Procesa los metadatos EXIF de la imagen
+            tags = exifread.process_file(f, stop_tag="GPS GPSLongitudeRef")
+            # Verifica si la imagen tiene metadatos de latitud y longitud GPS
+            if 'GPS GPSLatitude' in tags and 'GPS GPSLongitude' in tags:
+                # Obtiene la latitud y longitud en formato decimal
+                latitud = get_decimal_coords(tags['GPS GPSLatitude'])
+                longitud = get_decimal_coords(tags['GPS GPSLongitude'])
+                # Obtiene las referencias de latitud y longitud (N, S, E, W)
+                lat_ref = str(tags['GPS GPSLatitudeRef'])
+                long_ref = str(tags['GPS GPSLongitudeRef'])
+                # Ajusta la latitud y longitud según las referencias
+                if lat_ref == 'S':
+                    latitud = -latitud
+                if long_ref == 'W':
+                    longitud = -longitud
+                # Retorna las coordenadas GPS
+                return latitud, longitud
+    except Exception as e:
+        # Captura cualquier error que ocurra durante el procesamiento de la imagen
+        print(f"Error al procesar la imagen '{imagen_path}': {e}")
+    # Retorna None si no se encontraron coordenadas GPS o si ocurrió un error
     return None, None
 
+
+# Lista de extensiones de archivo de imagen válidas
+image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+
 def generate_csv(folder_path):
-    files = os.listdir(folder_path)
+    # Define la ubicación y el nombre del archivo CSV de salida
     output_csv = os.path.join(folder_path, os.path.basename(folder_path) + '.csv')
-    with open(output_csv, 'w', newline='') as csvfile:
-        import csv
-        writer = csv.writer(csvfile, delimiter=',')
+    # Utiliza os.walk() para recorrer todas las subcarpetas y archivos dentro del directorio raíz
+    for root, dirs, files in os.walk(folder_path):
         for filename in files:
-            filepath = os.path.join(folder_path, filename)
-            lat, lon = obtener_coordenadas_gps(filepath)
-            if lat is not None and lon is not None:
-                writer.writerow([filename, lat, lon])
+            # Verifica si el archivo tiene la extensión .JPG en mayúsculas
+            if filename.endswith('.JPG'):
+                # Construye la ruta completa del archivo
+                filepath = os.path.join(root, filename)
+                try:
+                    # Obtiene las coordenadas GPS del archivo de imagen
+                    lat, lon = obtener_coordenadas_gps(filepath)
+                    # Imprime el nombre del archivo y las coordenadas GPS para diagnóstico
+                    print(f"Archivo: {filename}, Latitud: {lat}, Longitud: {lon}")
+                    # Verifica si se encontraron coordenadas GPS válidas
+                    if lat is not None and lon is not None:
+                        # Escribe el nombre del archivo y las coordenadas en el archivo CSV
+                        with open(output_csv, 'a', newline='') as csvfile:
+                            writer = csv.writer(csvfile, delimiter=',')
+                            writer.writerow([filename, lat, lon])
+                except Exception as e:
+                    # Captura cualquier error que ocurra durante el procesamiento de la imagen
+                    print(f"Error al procesar la imagen '{filename}': {e}")
+    # Muestra un mensaje de éxito después de generar el archivo CSV
     success_message = f'¡CSV generado exitosamente! Nombre del archivo: {os.path.basename(output_csv)}'
     messagebox.showinfo("Éxito", success_message)
+
 
 def browse_folder():
     folder_path = filedialog.askdirectory(title='Selecciona la carpeta con los archivos')
