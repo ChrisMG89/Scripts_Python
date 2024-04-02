@@ -1,0 +1,164 @@
+import subprocess
+import tkinter as tk
+from tkinter import filedialog, messagebox, ttk
+import os
+from shutil import copyfile
+import pandas as pd
+import re
+import customtkinter
+
+customtkinter.set_appearance_mode("#ffffff")
+customtkinter.set_default_color_theme("blue")
+
+# Función para mostrar tooltips personalizados
+def mostrar_tooltip(widget, mensaje):
+    tooltip_label.config(text=mensaje)
+    tooltip_label.place(x=widget.winfo_rootx() + 10, y=widget.winfo_rooty() + 10)
+
+def ocultar_tooltip(event=None):
+    tooltip_label.place_forget()
+
+# Función para seleccionar un directorio y establecerlo en el campo de entrada
+def seleccionar_directorio(entry):
+    directorio = filedialog.askdirectory()
+    entry.delete(0, tk.END)
+    entry.insert(0, directorio.replace("\\", "/"))
+
+def ejecutar_script():
+    # Obtener valores de los campos de entrada
+    directorio_raiz = entry_directorio_raiz.get().replace("\\", "/")
+    ruta_csv = entry_ruta_csv.get().replace("\\", "/")
+    PB = entry_PB.get()
+    vuelo = entry_vuelo.get()
+
+    # Limpiar caja de texto
+    text_resultado.delete("1.0", tk.END)
+
+    try:
+        # Operaciones en la carpeta de imágenes térmicas
+        ruta_img_termica = os.path.join(directorio_raiz, "TERMICA", f"PB{PB}/PB{PB}_V{vuelo}")
+        print(f"Ruta Imágenes Térmicas: {ruta_img_termica}")
+        archivos_termica = os.listdir(ruta_img_termica)
+
+        # Buscar cualquier archivo CSV que contenga los valores de PB y vuelo en su nombre
+        pattern_termica = re.compile(f".*PB{PB}_V{vuelo}.*\.csv")
+        archivos_csv_termica = [archivo for archivo in os.listdir(ruta_csv) if pattern_termica.match(archivo)]
+
+        if archivos_csv_termica:
+            archivo_csv_termica = archivos_csv_termica[0]  # Tomar el primer archivo encontrado
+            print(f"Archivo CSV térmico encontrado: {archivo_csv_termica}")
+
+            insp_termica = pd.read_csv(os.path.join(ruta_csv, archivo_csv_termica))
+            archivos_sel_termica = insp_termica.loc[insp_termica['imagen_t'].isin(archivos_termica), 'imagen_t']
+
+            ruta_seleccion_termica = os.path.join(ruta_img_termica, "Seleccion_ATOM")
+            os.makedirs(ruta_seleccion_termica, exist_ok=True)
+
+            for archivo in archivos_sel_termica:
+                origen = os.path.join(ruta_img_termica, archivo)
+                destino = os.path.join(ruta_seleccion_termica, archivo)
+                copyfile(origen, destino)
+
+        # Operaciones en la carpeta de imágenes RGB
+        ruta_img_rgb = os.path.join(directorio_raiz, "RGB", f"PB{PB}/PB{PB}_V{vuelo}")
+        print(f"Ruta Imágenes RGB: {ruta_img_rgb}")
+        archivos_rgb = os.listdir(ruta_img_rgb)
+
+        # Buscar cualquier archivo CSV que contenga los valores de PB y vuelo en su nombre
+        pattern_rgb = re.compile(f".*PB{PB}_V{vuelo}.*\.csv")
+        archivos_csv_rgb = [archivo for archivo in os.listdir(ruta_csv) if pattern_rgb.match(archivo)]
+
+        if archivos_csv_rgb:
+            archivo_csv_rgb = archivos_csv_rgb[0]  # Tomar el primer archivo encontrado
+            print(f"Archivo CSV RGB encontrado: {archivo_csv_rgb}")
+
+            insp_rgb = pd.read_csv(os.path.join(ruta_csv, archivo_csv_rgb))
+            archivos_sel_rgb = insp_rgb.loc[insp_rgb['imagen_rgb'].isin(archivos_rgb), 'imagen_rgb']
+
+            ruta_seleccion_rgb = os.path.join(ruta_img_rgb, "Seleccion_ATOM")
+            os.makedirs(ruta_seleccion_rgb, exist_ok=True)
+
+            for archivo in archivos_sel_rgb:
+                origen = os.path.join(ruta_img_rgb, archivo)
+                destino = os.path.join(ruta_seleccion_rgb, archivo)
+                copyfile(origen, destino)
+
+        # Mostrar número de imágenes copiadas y mensaje de éxito en el cuadro blanco
+        num_imagenes_copiadas_termica = archivos_sel_termica.nunique() if archivos_csv_termica else 0
+        num_imagenes_copiadas_rgb = archivos_sel_rgb.nunique() if archivos_csv_rgb else 0
+        mensaje_exito = f"Operaciones ejecutadas con éxito. Número de imágenes copiadas: {num_imagenes_copiadas_termica} de térmicas y {num_imagenes_copiadas_rgb} de RGB."
+
+        # Mostrar el mensaje en el cuadro blanco
+        text_resultado.insert(tk.END, mensaje_exito)
+
+    except Exception as e:
+        # Mostrar error en la caja de texto y en mensaje de error
+        text_resultado.insert(tk.END, str(e))
+        messagebox.showerror("Error", f"Error al ejecutar las operaciones: {e}")
+        print(f"Excepción completa: {e}")
+
+# Crear la interfaz gráfica
+app = customtkinter.CTk()
+app.iconbitmap(default='ATOM-UAS-icono.ico')
+app.title("Seleccion ATOM")
+
+frame = customtkinter.CTkFrame(app)
+frame.pack(padx=10, pady=10)
+
+# Campos de entrada con etiquetas y tooltips
+label_directorio_raiz = customtkinter.CTkLabel(frame, text="Directorio Raíz:")
+label_directorio_raiz.grid(row=0, column=0, padx=5, pady=5, sticky="e")
+
+entry_directorio_raiz = customtkinter.CTkEntry(frame, width=200)  # Reduje el ancho del campo de entrada
+entry_directorio_raiz.grid(row=0, column=1, padx=5, pady=5)
+entry_directorio_raiz.bind("<Enter>", lambda event: mostrar_tooltip(entry_directorio_raiz, "Seleccione el directorio raíz de las imágenes"))
+entry_directorio_raiz.bind("<Leave>", ocultar_tooltip)
+
+btn_directorio_raiz = customtkinter.CTkButton(frame, fg_color="#EE763C", text="Seleccionar", command=lambda: seleccionar_directorio(entry_directorio_raiz))
+btn_directorio_raiz.grid(row=0, column=2, padx=5, pady=5)
+
+label_ruta_csv = customtkinter.CTkLabel(frame, text="Ruta Archivos CSV:")
+label_ruta_csv.grid(row=1, column=0, padx=5, pady=5, sticky="e")
+
+entry_ruta_csv = customtkinter.CTkEntry(frame, width=200)  # Reduje el ancho del campo de entrada
+entry_ruta_csv.grid(row=1, column=1, padx=5, pady=5)
+entry_ruta_csv.bind("<Enter>", lambda event: mostrar_tooltip(entry_ruta_csv, "Seleccione el directorio principal de los archivos CSV"))
+entry_ruta_csv.bind("<Leave>", ocultar_tooltip)
+
+btn_ruta_csv = customtkinter.CTkButton(frame, fg_color="#EE763C", text="Seleccionar", command=lambda: seleccionar_directorio(entry_ruta_csv))
+btn_ruta_csv.grid(row=1, column=2, padx=5, pady=5)
+
+label_PB = customtkinter.CTkLabel(frame, text="Número de PB:")
+label_PB.grid(row=2, column=0, padx=5, pady=5, sticky="e")
+
+entry_PB = customtkinter.CTkEntry(frame, width=40)
+entry_PB.grid(row=2, column=1, padx=5, pady=5)
+entry_PB.bind("<Enter>", lambda event: mostrar_tooltip(entry_PB, "Ingrese el número de PB"))
+entry_PB.bind("<Leave>", ocultar_tooltip)
+
+label_vuelo = customtkinter.CTkLabel(frame, text="Número de Vuelo:")
+label_vuelo.grid(row=3, column=0, padx=5, pady=5, sticky="e")
+
+entry_vuelo = customtkinter.CTkEntry(frame, width=40)
+entry_vuelo.grid(row=3, column=1, padx=5, pady=5)
+entry_vuelo.bind("<Enter>", lambda event: mostrar_tooltip(entry_vuelo, "Ingrese el número de Vuelo"))
+entry_vuelo.bind("<Leave>", ocultar_tooltip)
+
+# Caja de texto para mostrar resultados y mensajes del script
+text_resultado = tk.Text(frame, height=6, width=60)  # Reduje la altura de la caja de texto
+text_resultado.grid(row=5, column=0, columnspan=3, pady=10)
+
+# Scrollbar para la caja de texto
+scrollbar = customtkinter.CTkScrollbar(frame, command=text_resultado.yview)
+scrollbar.grid(row=5, column=3, sticky="ns")
+text_resultado.config(yscrollcommand=scrollbar.set)
+
+# Botón para ejecutar el script
+button = customtkinter.CTkButton(frame, fg_color="#EE763C", text="Ejecutar Operaciones", command=ejecutar_script)
+button.grid(row=4, column=0, columnspan=3, pady=10)
+
+# Configurar tooltip como una etiqueta
+tooltip_label = tk.Label(app, text="", background="yellow")
+tooltip_label.place_forget()
+
+app.mainloop()
