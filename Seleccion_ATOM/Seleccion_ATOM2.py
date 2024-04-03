@@ -6,6 +6,8 @@ from shutil import copyfile
 import pandas as pd
 import re
 import customtkinter
+import threading
+import time
 
 customtkinter.set_appearance_mode("#ffffff")
 customtkinter.set_default_color_theme("blue")
@@ -34,90 +36,84 @@ def ejecutar_script():
     # Limpiar caja de texto
     text_resultado.delete("1.0", tk.END)
 
-    try:
-        # Operaciones en la carpeta de imágenes térmicas
-        ruta_img_termica = os.path.join(directorio_raiz, "TERMICA", f"PB{PB}/PB{PB}_V{vuelo}")
-        print(f"Ruta Imágenes Térmicas: {ruta_img_termica}")
-        archivos_termica = os.listdir(ruta_img_termica)
+    # Función para actualizar el mensaje en el cuadro blanco
+    def actualizar_mensaje(mensaje):
+        text_resultado.delete("1.0", tk.END)
+        text_resultado.insert(tk.END, mensaje)
 
-        # Buscar cualquier archivo CSV que contenga los valores de PB y vuelo en su nombre
-        pattern_termica = re.compile(f".*PB{PB}_V{vuelo}.*\.csv")
-        archivos_csv_termica = [archivo for archivo in os.listdir(ruta_csv) if pattern_termica.match(archivo)]
+    def procesar():
+        try:
+            # Operaciones en la carpeta de imágenes térmicas
+            ruta_img_termica = os.path.join(directorio_raiz, "TERMICA", f"PB{PB}/PB{PB}_V{vuelo}")
+            print(f"Ruta Imágenes Térmicas: {ruta_img_termica}")
+            archivos_termica = os.listdir(ruta_img_termica)
 
-        if archivos_csv_termica:
-            archivo_csv_termica = archivos_csv_termica[0]  # Tomar el primer archivo encontrado
-            print(f"Archivo CSV térmico encontrado: {archivo_csv_termica}")
+            # Buscar cualquier archivo CSV que contenga los valores de PB y vuelo en su nombre
+            pattern_termica = re.compile(f".*PB{PB}_V{vuelo}.*\.csv")
+            archivos_csv_termica = [archivo for archivo in os.listdir(ruta_csv) if pattern_termica.match(archivo)]
 
-            insp_termica = pd.read_csv(os.path.join(ruta_csv, archivo_csv_termica))
-            archivos_sel_termica = insp_termica.loc[insp_termica['imagen_t'].isin(archivos_termica), 'imagen_t']
+            if archivos_csv_termica:
+                archivo_csv_termica = archivos_csv_termica[0]  # Tomar el primer archivo encontrado
+                print(f"Archivo CSV térmico encontrado: {archivo_csv_termica}")
 
-            ruta_seleccion_termica = os.path.join(ruta_img_termica, "Seleccion_ATOM")
-            os.makedirs(ruta_seleccion_termica, exist_ok=True)
+                insp_termica = pd.read_csv(os.path.join(ruta_csv, archivo_csv_termica))
+                archivos_sel_termica = insp_termica.loc[insp_termica['imagen_t'].isin(archivos_termica), 'imagen_t']
 
-            for archivo in archivos_sel_termica:
-                origen = os.path.join(ruta_img_termica, archivo)
-                destino = os.path.join(ruta_seleccion_termica, archivo)
-                copyfile(origen, destino)
+                ruta_seleccion_termica = os.path.join(ruta_img_termica, "Seleccion_ATOM")
+                os.makedirs(ruta_seleccion_termica, exist_ok=True)
 
-        # Operaciones en la carpeta de imágenes RGB
-        ruta_img_rgb = os.path.join(directorio_raiz, "RGB", f"PB{PB}/PB{PB}_V{vuelo}")
-        print(f"Ruta Imágenes RGB: {ruta_img_rgb}")
-        archivos_rgb = os.listdir(ruta_img_rgb)
+                for archivo in archivos_sel_termica:
+                    origen = os.path.join(ruta_img_termica, archivo)
+                    destino = os.path.join(ruta_seleccion_termica, archivo)
+                    copyfile(origen, destino)
 
-        # Buscar cualquier archivo CSV que contenga los valores de PB y vuelo en su nombre
-        pattern_rgb = re.compile(f".*PB{PB}_V{vuelo}.*\.csv")
-        archivos_csv_rgb = [archivo for archivo in os.listdir(ruta_csv) if pattern_rgb.match(archivo)]
+            # Operaciones en la carpeta de imágenes RGB
+            ruta_img_rgb = os.path.join(directorio_raiz, "RGB", f"PB{PB}/PB{PB}_V{vuelo}")
+            print(f"Ruta Imágenes RGB: {ruta_img_rgb}")
+            archivos_rgb = os.listdir(ruta_img_rgb)
 
-        if archivos_csv_rgb:
-            archivo_csv_rgb = archivos_csv_rgb[0]  # Tomar el primer archivo encontrado
-            print(f"Archivo CSV RGB encontrado: {archivo_csv_rgb}")
+            # Buscar cualquier archivo CSV que contenga los valores de PB y vuelo en su nombre
+            pattern_rgb = re.compile(f".*PB{PB}_V{vuelo}.*\.csv")
+            archivos_csv_rgb = [archivo for archivo in os.listdir(ruta_csv) if pattern_rgb.match(archivo)]
 
-            insp_rgb = pd.read_csv(os.path.join(ruta_csv, archivo_csv_rgb))
-            archivos_sel_rgb = insp_rgb.loc[insp_rgb['imagen_rgb'].isin(archivos_rgb), 'imagen_rgb']
+            if archivos_csv_rgb:
+                archivo_csv_rgb = archivos_csv_rgb[0]  # Tomar el primer archivo encontrado
+                print(f"Archivo CSV RGB encontrado: {archivo_csv_rgb}")
 
-            ruta_seleccion_rgb = os.path.join(ruta_img_rgb, "Seleccion_ATOM")
-            os.makedirs(ruta_seleccion_rgb, exist_ok=True)
+                insp_rgb = pd.read_csv(os.path.join(ruta_csv, archivo_csv_rgb))
+                archivos_sel_rgb = insp_rgb.loc[insp_rgb['imagen_rgb'].isin(archivos_rgb), 'imagen_rgb']
 
-            for archivo in archivos_sel_rgb:
-                origen = os.path.join(ruta_img_rgb, archivo)
-                destino = os.path.join(ruta_seleccion_rgb, archivo)
-                copyfile(origen, destino)
+                ruta_seleccion_rgb = os.path.join(ruta_img_rgb, "Seleccion_ATOM")
+                os.makedirs(ruta_seleccion_rgb, exist_ok=True)
 
-        # Mostrar número de imágenes copiadas y mensaje de éxito en el cuadro blanco
-        num_imagenes_copiadas_termica = archivos_sel_termica.nunique() if archivos_csv_termica else 0
-        num_imagenes_copiadas_rgb = archivos_sel_rgb.nunique() if archivos_csv_rgb else 0
-        mensaje_exito = f"Operaciones ejecutadas con éxito. Número de imágenes copiadas: {num_imagenes_copiadas_termica} de térmicas y {num_imagenes_copiadas_rgb} de RGB."
+                for archivo in archivos_sel_rgb:
+                    origen = os.path.join(ruta_img_rgb, archivo)
+                    destino = os.path.join(ruta_seleccion_rgb, archivo)
+                    copyfile(origen, destino)
 
-        # Mostrar el mensaje en el cuadro blanco
-        text_resultado.insert(tk.END, mensaje_exito)
+            # Mostrar número de imágenes copiadas y mensaje de éxito en el cuadro blanco
+            num_imagenes_copiadas_termica = archivos_sel_termica.nunique() if archivos_csv_termica else 0
+            num_imagenes_copiadas_rgb = archivos_sel_rgb.nunique() if archivos_csv_rgb else 0
+            mensaje_exito = f"Operaciones ejecutadas con éxito. Número de imágenes copiadas: {num_imagenes_copiadas_termica} de térmicas y {num_imagenes_copiadas_rgb} de RGB."
 
-        # Crear listas para almacenar las coincidencias encontradas en los archivos CSV
-        archivos_sel_termica = []
-        archivos_sel_rgb = []
+            # Actualizar mensaje en el cuadro blanco
+            mensaje_final = mensaje_exito + f"\nNúmero de incidencias encontradas en CSV térmico: {len(archivos_sel_termica)}"
+            mensaje_final += f"\nNúmero de incidencias encontradas en CSV RGB: {len(archivos_sel_rgb)}"
+            actualizar_mensaje(mensaje_final)
 
-        # Iterar sobre los archivos CSV termicos y buscar coincidencias
-        for index, row in insp_termica.iterrows():
-            nombre_imagen_t = row['imagen_t']
-            if nombre_imagen_t in archivos_termica:
-                archivos_sel_termica.append(nombre_imagen_t)
+        except Exception as e:
+            # Mostrar error en la caja de texto y en mensaje de error
+            mensaje_error = str(e)
+            actualizar_mensaje(mensaje_error)
+            messagebox.showerror("Error", f"Error al ejecutar las operaciones: {e}")
+            print(f"Excepción completa: {e}")
 
-        # Iterar sobre los archivos CSV RGB y buscar coincidencias
-        for index, row in insp_rgb.iterrows():
-            nombre_imagen_rgb = row['imagen_rgb']
-            if nombre_imagen_rgb in archivos_rgb:
-                archivos_sel_rgb.append(nombre_imagen_rgb)
-
-        # Mostrar el número de incidencias encontradas en el CSV
-        mensaje_incidencias = f"\nEn el CSV se han encontrado {len(archivos_sel_termica)} incidencias con {num_imagenes_copiadas_termica} imágenes térmicas y {len(archivos_sel_rgb)} incidencias con {num_imagenes_copiadas_rgb} imágenes RGB."
-        text_resultado.insert(tk.END, mensaje_incidencias)
-
-    except Exception as e:
-        # Mostrar error en la caja de texto y en mensaje de error
-        text_resultado.insert(tk.END, str(e))
-        messagebox.showerror("Error", f"Error al ejecutar las operaciones: {e}")
-        print(f"Excepción completa: {e}")
-
-
+    # Mostrar mensaje de procesamiento mientras se ejecutan las operaciones
+    actualizar_mensaje("Procesando...")
+    
+    # Iniciar procesamiento en un hilo separado
+    threading.Thread(target=procesar).start()
+    
 # Crear la interfaz gráfica
 app = customtkinter.CTk()
 app.iconbitmap(default='ATOM-UAS-icono.ico')
@@ -166,7 +162,7 @@ entry_vuelo.bind("<Enter>", lambda event: mostrar_tooltip(entry_vuelo, "Ingrese 
 entry_vuelo.bind("<Leave>", ocultar_tooltip)
 
 # Caja de texto para mostrar resultados y mensajes del script
-text_resultado = tk.Text(frame, height=6, width=60)  # Reduje la altura de la caja de texto
+text_resultado = tk.Text(frame, height=6, width=70)  # Reduje la altura de la caja de texto
 text_resultado.grid(row=5, column=0, columnspan=3, pady=10)
 
 # Scrollbar para la caja de texto
