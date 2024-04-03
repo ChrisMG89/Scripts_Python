@@ -91,11 +91,32 @@ def ejecutar_script():
         # Mostrar el mensaje en el cuadro blanco
         text_resultado.insert(tk.END, mensaje_exito)
 
+        # Crear listas para almacenar las coincidencias encontradas en los archivos CSV
+        archivos_sel_termica = []
+        archivos_sel_rgb = []
+
+        # Iterar sobre los archivos CSV termicos y buscar coincidencias
+        for index, row in insp_termica.iterrows():
+            nombre_imagen_t = row['imagen_t']
+            if nombre_imagen_t in archivos_termica:
+                archivos_sel_termica.append(nombre_imagen_t)
+
+        # Iterar sobre los archivos CSV RGB y buscar coincidencias
+        for index, row in insp_rgb.iterrows():
+            nombre_imagen_rgb = row['imagen_rgb']
+            if nombre_imagen_rgb in archivos_rgb:
+                archivos_sel_rgb.append(nombre_imagen_rgb)
+
+        # Mostrar el número de incidencias encontradas en el CSV
+        mensaje_incidencias = f"\nEn el CSV se han encontrado {len(archivos_sel_termica)} incidencias con {num_imagenes_copiadas_termica} imágenes térmicas y {len(archivos_sel_rgb)} incidencias con {num_imagenes_copiadas_rgb} imágenes RGB."
+        text_resultado.insert(tk.END, mensaje_incidencias)
+
     except Exception as e:
         # Mostrar error en la caja de texto y en mensaje de error
         text_resultado.insert(tk.END, str(e))
         messagebox.showerror("Error", f"Error al ejecutar las operaciones: {e}")
         print(f"Excepción completa: {e}")
+
 
 # Crear la interfaz gráfica
 app = customtkinter.CTk()
