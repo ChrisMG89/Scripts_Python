@@ -1,5 +1,4 @@
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
 import psycopg2
 from tkinter import messagebox
 
@@ -15,17 +14,17 @@ class DatosTecnicosPlantaUI:
         self.entries = {}
 
         for i, label in enumerate(self.labels):
-            tk.Label(root, text=label).grid(row=i, column=0)
+            ctk.CTkLabel(root, text=label).grid(row=i, column=0, pady=5, padx=5, sticky='w')
             if label == 'ORIENTACION':
                 options = ['Vertical', 'Horizontal', '']  # Añadir opción para valor nulo
-                entry = ttk.Combobox(root, values=options)
+                entry = ctk.CTkComboBox(root, values=options)
             else:
-                entry = tk.Entry(root)
-            entry.grid(row=i, column=1)
+                entry = ctk.CTkEntry(root)
+            entry.grid(row=i, column=1, pady=5, padx=5)
             self.entries[label] = entry
 
-        self.submit_button = tk.Button(root, text="Guardar", command=self.guardar_datos)
-        self.submit_button.grid(row=len(self.labels), column=0, columnspan=2)
+        self.submit_button = ctk.CTkButton(root, text="Guardar", command=self.guardar_datos)
+        self.submit_button.grid(row=len(self.labels), column=0, columnspan=2, pady=10)
 
     def guardar_datos(self):
         data = {label: entry.get().upper() if label != 'ORIENTACION' else entry.get() for label, entry in self.entries.items()}  # Convertir a mayúsculas solo para campos diferentes de orientación
@@ -69,6 +68,9 @@ class DatosTecnicosPlantaUI:
                 conn.close()
 
 if __name__ == "__main__":
-    root = tk.Tk()
+    ctk.set_appearance_mode("dark")  # Puedes cambiar a "dark" si prefieres
+    ctk.set_default_color_theme("blue")  # Tema de color azul
+
+    root = ctk.CTk()
     app = DatosTecnicosPlantaUI(root)
     root.mainloop()
