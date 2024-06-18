@@ -37,7 +37,8 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           runtime_tmpdir=None,
-          console=False) 
+          console=False,
+		  icon='C:\\Users\\chris\\Desktop\\Aplicaciones BBDD\\DataMaster\\combined_icon.ico') 
 
 def post_build():
     # Carga el tema personalizado después de que se haya construido la aplicación
