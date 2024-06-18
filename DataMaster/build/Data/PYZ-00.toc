@@ -1,0 +1,3 @@
+('C:\\Users\\chris\\Desktop\\Aplicaciones '
+ 'BBDD\\DataMaster\\build\\Data\\PYZ-00.pyz',
+ [])
