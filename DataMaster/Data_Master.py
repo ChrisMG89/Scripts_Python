@@ -4,6 +4,7 @@ import bcrypt
 import csv
 from datetime import datetime
 import customtkinter as ctk
+import os
 
 # Configuración de la aplicación
 class App(ctk.CTk):
@@ -11,6 +12,8 @@ class App(ctk.CTk):
         super().__init__()
         self.title("Aplicación de Gestión de BBDD")
         self.geometry("900x800")
+        self.iconbitmap(os.path.join("C:\\Users\\chris\\Desktop\\Aplicaciones BBDD\\DataMaster\\combined_icon.ico"))
+
 
         tabview = ctk.CTkTabview(self)
         tabview.pack(expand=True, fill='both')
