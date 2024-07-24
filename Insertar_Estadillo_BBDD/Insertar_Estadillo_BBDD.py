@@ -24,6 +24,7 @@ class EstadilloUploaderApp:
     def browse_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
         if file_path:
+            self.file_entry.delete(0, ctk.END)  # Limpiar la entrada antes de insertar la nueva ruta
             self.file_entry.insert(0, file_path)
 
     def cargar_estadillo(self):

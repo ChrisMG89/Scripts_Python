@@ -12,8 +12,7 @@ class App(ctk.CTk):
         super().__init__()
         self.title("Aplicación de Gestión de BBDD")
         self.geometry("900x800")
-        self.iconbitmap(os.path.join("C:\\Users\\chris\\Desktop\\Aplicaciones BBDD\\DataMaster\\combined_icon.ico"))
-
+        self.iconbitmap(default='combined_icon.ico')
 
         tabview = ctk.CTkTabview(self)
         tabview.pack(expand=True, fill='both')
@@ -76,12 +75,20 @@ class App(ctk.CTk):
             conn.commit()
 
             messagebox.showinfo("Éxito", "Datos guardados correctamente")
+            self.clear_entries()  # Limpiar los campos de entrada después de guardar
         except (Exception, psycopg2.Error) as error:
             messagebox.showerror("Error", f"Ocurrió un error al guardar los datos: {error}")
         finally:
             if conn:
                 cursor.close()
                 conn.close()
+
+    def clear_entries(self):
+        for entry in self.entries.values():
+            if isinstance(entry, ctk.CTkComboBox):
+                entry.set('')
+            else:
+                entry.delete(0, 'end')
 
     def init_tab2(self, frame):
         # Crear Nuevo Usuario
@@ -202,6 +209,7 @@ class App(ctk.CTk):
     def browse_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
         if file_path:
+            self.file_entry.delete(0, 'end')  # Limpiar cualquier ruta anterior
             self.file_entry.insert(0, file_path)
 
     def cargar_estadillo(self):
@@ -242,6 +250,7 @@ class App(ctk.CTk):
                 
                 conn.commit()
                 messagebox.showinfo("Éxito", "Datos cargados correctamente")
+                self.file_entry.delete(0, 'end')  # Limpiar el campo de entrada del archivo después de cargar
         except (Exception, psycopg2.Error) as error:
             messagebox.showerror("Error", f"Ocurrió un error al cargar los datos: {error}")
         finally:
