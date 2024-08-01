@@ -4,7 +4,7 @@ block_cipher = None
 
 def get_ctk_theme():
     # Aquí especifica la ruta completa al archivo de tema personalizado
-    theme_file = "C:\\Users\\chris\\Desktop\\Aplicaciones BBDD\\DataMaster\\orange_theme.json"
+    theme_file = "C:\\Users\\chris\\Desktop\\Mis_aplicaciones\\Aplicaciones BBDD\\DataMaster\\orange_theme.json"
     
     # Carga el contenido del archivo del tema
     with open(theme_file, 'r') as f:
@@ -14,7 +14,7 @@ def get_ctk_theme():
 a = Analysis(['Data_Master.py'],
              pathex=[],
              binaries=[],
-             datas=[('C:\\Users\\chris\\Desktop\\Aplicaciones BBDD\\DataMaster\\orange_theme.json', 'Data_Master')],
+             datas=[('C:\\Users\\chris\\Desktop\\Mis_aplicaciones\\Aplicaciones BBDD\\DataMaster\\orange_theme.json', 'Data_Master')],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],

@@ -47,7 +47,12 @@ class App(ctk.CTk):
 
         for i, label in enumerate(labels):
             ctk.CTkLabel(frame, text=label).grid(row=i, column=0, pady=5, padx=5, sticky='w')
-            if label == 'ORIENTACION':
+            if label == 'ESTRUCTURA_TRACKER':
+                options = ['SEGUIDORES 1 EJE', 'FIJOS', 'SEGUIDORES 2 EJES']  # Opciones predefinidas
+                entry = ctk.CTkComboBox(frame, values=options, width=140)
+                entry.configure(state="normal")  # Permitir la entrada manual
+                entry.bind("<Key>", lambda e: entry.configure(state="normal"))  # Habilitar la escritura
+            elif label == 'ORIENTACION':
                 options = ['Vertical', 'Horizontal', '']  # Añadir opción para valor nulo
                 entry = ctk.CTkComboBox(frame, values=options)
             else:
