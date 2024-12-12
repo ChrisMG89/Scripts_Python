@@ -41,10 +41,19 @@ class App(ctk.CTk):
         return nombres_vuelos
 
     def obtener_datos_directorio(self, directorio):
-        """Extrae el nombre de la planta y el año del directorio."""
+        """Extrae el nombre de la planta y el año del directorio basado en una subruta compartida."""
+        subruta_compartida = os.path.normpath(r"AEROTOOLS-UAV Dropbox\AEROTOOLS-UAV\Proyectos\PLANTAS_PV")
+    
         partes_directorio = os.path.normpath(directorio).split(os.sep)
-        nombre_planta = partes_directorio[8].upper()  # Convertir a mayúsculas
-        año_inspeccion = partes_directorio[9]
+    
+        # Buscar dónde está la subruta compartida en las partes del directorio
+        try:
+            indice_subruta = partes_directorio.index(os.path.basename(subruta_compartida))
+            nombre_planta = partes_directorio[indice_subruta + 2].upper()  # Nombre de la planta
+            año_inspeccion = partes_directorio[indice_subruta + 3]  # Año de inspección
+        except (ValueError, IndexError):
+            raise ValueError("El directorio no contiene la estructura esperada con la subruta compartida.")
+    
         return nombre_planta, año_inspeccion
 
     def generar_excel_vuelos(self, directorio, nombre_archivo_excel, nombre_planta):
