@@ -2,7 +2,7 @@ import psycopg2
 from tkinter import messagebox, filedialog
 import bcrypt
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 import customtkinter as ctk
 import os
 
@@ -22,11 +22,15 @@ class App(ctk.CTk):
         tab2 = tabview.add("Crear Nuevo Usuario")
         tab3 = tabview.add("Actualizar Contraseña")
         tab4 = tabview.add("Insertar Estadillo")
+        tab5 = tabview.add("Añadir URL Inspección")
+        tab6 = tabview.add("Horas de Vuelo")
 
         self.init_tab1(tab1)
         self.init_tab2(tab2)
         self.init_tab3(tab3)
         self.init_tab4(tab4)
+        self.init_tab5(tab5)
+        self.init_tab6(tab6)
 
     def connect_to_db(self):
         return psycopg2.connect(
@@ -258,6 +262,123 @@ class App(ctk.CTk):
                 self.file_entry.delete(0, 'end')  # Limpiar el campo de entrada del archivo después de cargar
         except (Exception, psycopg2.Error) as error:
             messagebox.showerror("Error", f"Ocurrió un error al cargar los datos: {error}")
+        finally:
+            if conn:
+                cursor.close()
+                conn.close()
+
+    def init_tab5(self, frame):
+        # Añadir URL Inspección
+        ctk.CTkLabel(frame, text="URL:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
+        self.url_entry = ctk.CTkEntry(frame, width=400)
+        self.url_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        ctk.CTkLabel(frame, text="Descripción:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
+        self.description_entry = ctk.CTkEntry(frame, width=400)
+        self.description_entry.grid(row=1, column=1, padx=10, pady=5)
+
+        save_button = ctk.CTkButton(frame, text="Guardar", command=self.save_url)
+        save_button.grid(row=2, column=1, pady=10)
+
+    def save_url(self):
+        url = self.url_entry.get().strip()
+        description = self.description_entry.get().strip()
+
+        if not url or not description:
+            messagebox.showerror("Error", "Por favor, complete todos los campos.")
+            return
+
+        try:
+            conn = self.connect_to_db()
+            cursor = conn.cursor()
+
+            query = """
+            INSERT INTO admin_urls (url, description) 
+            VALUES (%s, %s)
+            """
+            cursor.execute(query, (url, description))
+            conn.commit()
+
+            messagebox.showinfo("Éxito", "URL añadida correctamente.")
+
+            # Limpiar los campos
+            self.url_entry.delete(0, 'end')
+            self.description_entry.delete(0, 'end')
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo guardar la URL: {str(e)}")
+        finally:
+            if conn:
+                cursor.close()
+                conn.close()
+
+    def init_tab6(self, frame):
+        # Horas de Vuelo
+        ctk.CTkLabel(frame, text="Piloto:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
+
+        # Crear combobox con valor inicial vacío
+        self.pilot_combobox = ctk.CTkComboBox(frame, values=[], state="readonly")
+        self.pilot_combobox.grid(row=0, column=1, padx=10, pady=5)
+        self.pilot_combobox.set("")  # Establecer texto inicial vacío
+
+        load_button = ctk.CTkButton(frame, text="Cargar Pilotos", command=self.load_pilots)
+        load_button.grid(row=0, column=2, padx=10, pady=5)
+
+        calculate_button = ctk.CTkButton(frame, text="Calcular Horas", command=self.calculate_flight_hours)
+        calculate_button.grid(row=1, column=0, columnspan=3, pady=10)
+
+        self.result_label = ctk.CTkLabel(frame, text="")
+        self.result_label.grid(row=2, column=0, columnspan=3, pady=10)
+
+    def load_pilots(self):
+        try:
+            conn = self.connect_to_db()
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT DISTINCT piloto FROM estadillos")
+            pilots = [row[0] for row in cursor.fetchall()]
+
+            self.pilot_combobox.configure(values=pilots)
+            self.pilot_combobox.set("")  # Restablecer el texto del combobox a vacío después de cargar
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudieron cargar los pilotos: {str(e)}")
+        finally:
+            if conn:
+                cursor.close()
+                conn.close()
+
+    def calculate_flight_hours(self):
+        selected_pilot = self.pilot_combobox.get()
+
+        if not selected_pilot:
+            messagebox.showerror("Error", "Por favor, seleccione un piloto.")
+            return
+
+        try:
+            conn = self.connect_to_db()
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT hora_de_inicio, hora_final
+                FROM estadillos
+                WHERE piloto = %s
+                """,
+                (selected_pilot,)
+            )
+            records = cursor.fetchall()
+
+            total_flight_time = timedelta()
+            for start_time, end_time in records:
+                start = datetime.combine(datetime.today(), start_time)
+                end = datetime.combine(datetime.today(), end_time)
+                total_flight_time += (end - start)
+
+            hours, remainder = divmod(total_flight_time.total_seconds(), 3600)
+            minutes, seconds = divmod(remainder, 60)
+
+            self.result_label.configure(text=f"Horas totales de vuelo: {int(hours)} horas, {int(minutes)} minutos.")
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudieron calcular las horas de vuelo: {str(e)}")
         finally:
             if conn:
                 cursor.close()
